@@ -148,26 +148,34 @@ textarea {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 8px;
-  margin: -4px 0 20px;
+  gap: 6px;
+  width: fit-content;
+  margin: 6px auto 34px;
+  padding: 7px;
+  border: 1px solid rgba(212, 166, 170, 0.24);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.54);
+  box-shadow: 0 8px 18px rgba(145, 85, 85, 0.06);
+  backdrop-filter: blur(10px);
 }
 
 .language-switch button {
-  min-width: 44px;
-  min-height: 25px;
-  padding: 4px 10px;
-  border: 1px solid var(--line);
+  min-width: 54px;
+  min-height: 32px;
+  padding: 6px 12px;
+  border: 0;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.58);
+  background: transparent;
   color: var(--wine);
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1;
   cursor: pointer;
 }
 
 .language-switch button.active {
-  background: rgba(243, 223, 225, 0.82);
+  background: rgba(243, 223, 225, 0.92);
   color: #674845;
+  box-shadow: 0 5px 12px rgba(145, 85, 85, 0.08);
 }
 
 .intro,
@@ -241,19 +249,21 @@ textarea {
   position: relative;
   display: inline-flex;
   justify-content: center;
-  overflow: hidden;
+  overflow: visible;
+  padding: 0 0.08em 0.2em;
+  margin: -0.08em 0 -0.16em;
   color: var(--gold);
   font-family: var(--script-font);
   font-size: 98px;
   font-weight: 400;
-  line-height: 1.02;
+  line-height: 1.15;
   text-shadow: 0 2px 12px rgba(193, 143, 147, 0.13);
 }
 
 .intro h1::after {
   content: "";
   position: absolute;
-  inset: 0 -35%;
+  inset: 0 -18%;
   background: linear-gradient(105deg, transparent 34%, rgba(255, 255, 255, 0.72) 50%, transparent 66%);
   transform: translateX(-130%) skewX(-12deg);
   animation: titleSheen 4.2s ease-in-out infinite 1.3s;

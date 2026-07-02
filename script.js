@@ -310,7 +310,6 @@ function setHtml(selector, value) {
 
 const textAnimationSelectors = [
   ".intro h1",
-  ".song-link",
   ".intro p",
   ".intro time",
   ".message-block h2",
@@ -392,6 +391,10 @@ let shouldAutoPlaySong = true;
 let musicPrompt;
 
 function updateSongButton() {
+  if (!songButton) {
+    return;
+  }
+
   const text = translations[currentLanguage];
 
   if (isSongMissing) {
@@ -493,7 +496,9 @@ function applyLanguage(language) {
   document.title = text.documentTitle;
   document.querySelector(".invitation").setAttribute("aria-label", text.pageLabel);
   document.querySelector(".language-switch").setAttribute("aria-label", text.languageLabel);
-  document.querySelector(".song-link").setAttribute("aria-label", text.songLabel);
+  if (songButton) {
+    songButton.setAttribute("aria-label", text.songLabel);
+  }
 
   setupSignatureTitle(text.introName);
   updateSongButton();
@@ -629,16 +634,18 @@ if (songAudio) {
   );
 }
 
-songButton.addEventListener("click", () => {
-  if (isSongPlaying) {
-    shouldAutoPlaySong = false;
-    pauseSong();
-    return;
-  }
+if (songButton) {
+  songButton.addEventListener("click", () => {
+    if (isSongPlaying) {
+      shouldAutoPlaySong = false;
+      pauseSong();
+      return;
+    }
 
-  shouldAutoPlaySong = true;
-  playSong();
-});
+    shouldAutoPlaySong = true;
+    playSong();
+  });
+}
 
 document.querySelectorAll(".language-switch button").forEach((button) => {
   button.addEventListener("click", () => {

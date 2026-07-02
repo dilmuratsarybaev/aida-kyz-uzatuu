@@ -85,6 +85,12 @@ const translations = {
     introName: "Аида",
     pageLabel: "Аиданын кыз узатуу чакыруусу",
     languageLabel: "Тил тандоо",
+    songText: "Ырды иштетүү",
+    songPauseText: "Ырды токтотуу",
+    songMissingText: "MP3 файл керек",
+    musicPromptTitle: "Музыканы баштоо",
+    musicPromptText: "Телефондо үн чыгышы үчүн бир жолу басыңыз",
+    songLabel: "Ырды иштетүү",
     introSubtitle: "Кыз узатуу",
     messageTitle: "Урматтуу<br />коноктор!",
     messageFirst:
@@ -132,6 +138,12 @@ const translations = {
     introName: "Аида",
     pageLabel: "Приглашение на проводы невесты Аиды",
     languageLabel: "Выбор языка",
+    songText: "Включить песню",
+    songPauseText: "Остановить песню",
+    songMissingText: "Нужен MP3 файл",
+    musicPromptTitle: "Включить музыку",
+    musicPromptText: "Нажмите один раз, чтобы включить звук",
+    songLabel: "Включить песню",
     introSubtitle: "Проводы невесты",
     messageTitle: "Уважаемые<br />гости!",
     messageFirst:
@@ -179,6 +191,12 @@ const translations = {
     introName: "Aida",
     pageLabel: "Aida'nın gelin uğurlama davetiyesi",
     languageLabel: "Dil seçimi",
+    songText: "Şarkıyı aç",
+    songPauseText: "Şarkıyı durdur",
+    songMissingText: "MP3 dosyası gerekli",
+    musicPromptTitle: "Müziği başlat",
+    musicPromptText: "Sesi açmak için bir kez dokunun",
+    songLabel: "Şarkıyı aç",
     introSubtitle: "Gelin uğurlama",
     messageTitle: "Değerli<br />misafirler!",
     messageFirst:
@@ -226,6 +244,12 @@ const translations = {
     introName: "Aida",
     pageLabel: "Invitation to Aida's bride send-off",
     languageLabel: "Language selection",
+    songText: "Play song",
+    songPauseText: "Pause song",
+    songMissingText: "MP3 file needed",
+    musicPromptTitle: "Start music",
+    musicPromptText: "Tap once to enable sound",
+    songLabel: "Play song",
     introSubtitle: "Bride send-off",
     messageTitle: "Dear<br />guests!",
     messageFirst:
@@ -286,6 +310,7 @@ function setHtml(selector, value) {
 
 const textAnimationSelectors = [
   ".intro h1",
+  ".song-link",
   ".intro p",
   ".intro time",
   ".message-block h2",
@@ -359,6 +384,107 @@ function refreshTextAnimations() {
   });
 }
 
+const songButton = document.querySelector(".song-link");
+const songAudio = document.getElementById("weddingSong");
+let isSongPlaying = false;
+let isSongMissing = false;
+let shouldAutoPlaySong = true;
+let musicPrompt;
+
+function updateSongButton() {
+  const text = translations[currentLanguage];
+
+  if (isSongMissing) {
+    songButton.classList.add("is-missing");
+    songButton.classList.remove("is-playing");
+    songButton.setAttribute("aria-label", text.songMissingText);
+    setText(".song-text", text.songMissingText);
+    return;
+  }
+
+  songButton.classList.remove("is-missing");
+  songButton.classList.toggle("is-playing", isSongPlaying);
+  songButton.setAttribute("aria-label", isSongPlaying ? text.songPauseText : text.songLabel);
+  setText(".song-text", isSongPlaying ? text.songPauseText : text.songText);
+}
+
+function updateMusicPromptText() {
+  if (!musicPrompt) {
+    return;
+  }
+
+  const text = translations[currentLanguage];
+  musicPrompt.querySelector(".music-prompt-title").textContent = text.musicPromptTitle;
+  musicPrompt.querySelector(".music-prompt-text").textContent = text.musicPromptText;
+}
+
+function showMusicPrompt() {
+  if (isSongPlaying || isSongMissing) {
+    return;
+  }
+
+  if (!musicPrompt) {
+    musicPrompt = document.createElement("button");
+    musicPrompt.type = "button";
+    musicPrompt.className = "music-prompt";
+    musicPrompt.innerHTML = `
+      <span class="music-prompt-note" aria-hidden="true">♪</span>
+      <span>
+        <span class="music-prompt-title"></span>
+        <span class="music-prompt-text"></span>
+      </span>
+    `;
+    musicPrompt.addEventListener("click", () => {
+      shouldAutoPlaySong = true;
+      playSong();
+    });
+    document.body.appendChild(musicPrompt);
+  }
+
+  updateMusicPromptText();
+  musicPrompt.classList.add("is-visible");
+}
+
+function hideMusicPrompt() {
+  if (musicPrompt) {
+    musicPrompt.classList.remove("is-visible");
+  }
+}
+
+async function playSong({ showPromptOnBlock = true } = {}) {
+  if (!songAudio || isSongMissing) {
+    return false;
+  }
+
+  try {
+    songAudio.muted = false;
+    songAudio.volume = 1;
+    await songAudio.play();
+    isSongPlaying = true;
+    updateSongButton();
+    hideMusicPrompt();
+    return true;
+  } catch (error) {
+    isSongPlaying = false;
+    updateSongButton();
+    if (showPromptOnBlock) {
+      showMusicPrompt();
+    }
+    return false;
+  }
+}
+
+function pauseSong() {
+  if (!songAudio) {
+    return;
+  }
+
+  songAudio.pause();
+  isSongPlaying = false;
+  updateSongButton();
+  hideMusicPrompt();
+}
+
 function applyLanguage(language) {
   currentLanguage = language;
   const text = translations[language];
@@ -367,8 +493,11 @@ function applyLanguage(language) {
   document.title = text.documentTitle;
   document.querySelector(".invitation").setAttribute("aria-label", text.pageLabel);
   document.querySelector(".language-switch").setAttribute("aria-label", text.languageLabel);
+  document.querySelector(".song-link").setAttribute("aria-label", text.songLabel);
 
   setupSignatureTitle(text.introName);
+  updateSongButton();
+  updateMusicPromptText();
   setText(".intro p", text.introSubtitle);
   setHtml(".message-block h2", text.messageTitle);
   setText(".message-block p:nth-of-type(1)", text.messageFirst);
@@ -417,6 +546,99 @@ const whatsAppPhone = "996709065082";
 setupSignatureTitle();
 setupPetals();
 setupTextAnimations();
+updateSongButton();
+
+if (songAudio) {
+  songAudio.autoplay = true;
+  songAudio.loop = true;
+  songAudio.preload = "auto";
+  songAudio.load();
+
+  songAudio.addEventListener("play", () => {
+    isSongPlaying = true;
+    updateSongButton();
+  });
+
+  songAudio.addEventListener("pause", () => {
+    isSongPlaying = false;
+    updateSongButton();
+  });
+
+  songAudio.addEventListener("error", () => {
+    isSongMissing = true;
+    isSongPlaying = false;
+    updateSongButton();
+  });
+
+  document.addEventListener("DOMContentLoaded", () => {
+    if (shouldAutoPlaySong) {
+      playSong();
+    }
+  });
+
+  window.addEventListener("load", () => {
+    if (shouldAutoPlaySong) {
+      playSong();
+    }
+  });
+
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden && shouldAutoPlaySong && !isSongPlaying) {
+      playSong();
+    }
+  });
+
+  document.addEventListener(
+    "pointerdown",
+    () => {
+      if (shouldAutoPlaySong && !isSongPlaying && !isSongMissing) {
+        playSong();
+      }
+    },
+    { once: true }
+  );
+
+  document.addEventListener(
+    "touchstart",
+    () => {
+      if (shouldAutoPlaySong && !isSongPlaying && !isSongMissing) {
+        playSong({ showPromptOnBlock: false });
+      }
+    },
+    { once: true, passive: true }
+  );
+
+  document.addEventListener(
+    "click",
+    () => {
+      if (shouldAutoPlaySong && !isSongPlaying && !isSongMissing) {
+        playSong({ showPromptOnBlock: false });
+      }
+    },
+    { once: true }
+  );
+
+  document.addEventListener(
+    "keydown",
+    () => {
+      if (shouldAutoPlaySong && !isSongPlaying && !isSongMissing) {
+        playSong({ showPromptOnBlock: false });
+      }
+    },
+    { once: true }
+  );
+}
+
+songButton.addEventListener("click", () => {
+  if (isSongPlaying) {
+    shouldAutoPlaySong = false;
+    pauseSong();
+    return;
+  }
+
+  shouldAutoPlaySong = true;
+  playSong();
+});
 
 document.querySelectorAll(".language-switch button").forEach((button) => {
   button.addEventListener("click", () => {
